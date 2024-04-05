@@ -10,4 +10,5 @@ const userController_1 = require("../controller/userController");
 const validators_1 = require("../validators/validators");
 const router = express_1.default.Router();
 router.post('/register', (0, validators_1.registerValidationRules)(), userController_1.registerUser);
+router.post("/login", validators_1.loginValidationRules, userController_1.loginUser);
 exports.default = router;

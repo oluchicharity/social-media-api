@@ -12,17 +12,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerUser = void 0;
+exports.loginUser = exports.registerUser = void 0;
 const express_validator_1 = require("express-validator");
 const userModel_1 = __importDefault(require("../models/userModel"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Validate request body
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
             res.status(400).json({ errors: errors.array() });
-            return; // Return here to avoid executing further code
+            return;
         }
         const { username, email, password } = req.body;
         // Hash the password
@@ -32,12 +35,12 @@ const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const existingUser = yield userModel_1.default.findOne({ email });
         if (existingUser) {
             res.status(400).json({ error: 'Email already exists' });
-            return; // Return here to avoid executing further code
+            return;
         }
         // Create a new user
         const newUser = new userModel_1.default({ username, email, password: hashedPassword });
         const savedUser = yield newUser.save();
-        // You may choose to generate and send an authentication token here, come back here for login
+        // generate and send an authentication token here, come back here for login
         res.status(201).json({ message: 'User registered successfully', user: savedUser });
     }
     catch (error) {
@@ -46,3 +49,42 @@ const registerUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.registerUser = registerUser;
+const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Validate request body
+        const errors = (0, express_validator_1.validationResult)(req);
+        if (!errors.isEmpty()) {
+            res.status(400).json({ errors: errors.array() });
+            return;
+        }
+        const { email, password } = req.body;
+        // Find the user by email
+        const user = yield userModel_1.default.findOne({ email });
+        // Check if the user exists
+        if (!user) {
+            res.status(401).json({ error: 'Invalid email or password' });
+            return;
+        }
+        // Compare passwords
+        const passwordMatch = yield bcrypt_1.default.compare(password, user.password);
+        if (!passwordMatch) {
+            res.status(401).json({ error: 'Invalid email or password' });
+            return;
+        }
+        // Passwords match, login successful
+        const secretKey = process.env.SECRET;
+        if (!secretKey) {
+            throw new Error('SECRET key is not provided');
+        }
+        // Generate JWT token 
+        const token = jsonwebtoken_1.default.sign({ userId: user._id }, secretKey, { expiresIn: '1h' });
+        // Exclude password field from user object in response/ sanitize
+        const userWithoutPassword = Object.assign(Object.assign({}, user.toJSON()), { password: undefined });
+        res.status(200).json({ message: 'Login successful', user: userWithoutPassword, token });
+    }
+    catch (error) {
+        console.error('Error logging in:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+exports.loginUser = loginUser;
