@@ -1,5 +1,4 @@
 "use strict";
-// userModel.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -24,12 +23,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// postModel.ts
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    username: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-    followers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }],
-    following: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }]
+const postSchema = new mongoose_1.Schema({
+    text: { type: String, required: true },
+    attachments: [{ type: String }],
+    createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true } // Array of attachment URLs
 });
-exports.default = mongoose_1.default.model('User', UserSchema);
+exports.default = mongoose_1.default.model('Post', postSchema);

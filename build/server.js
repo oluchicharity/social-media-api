@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const postRoutes_1 = __importDefault(require("./routes/postRoutes"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -15,7 +16,7 @@ app.get('/', (req, res) => {
 });
 app.use(express_1.default.json());
 // Define API routes
-app.use('/api', userRoutes_1.default);
+app.use('/api', userRoutes_1.default, postRoutes_1.default);
 // MongoDB connection
 const mongodb = 'mongodb+srv://agbakwuruoluchi29:SgsXUJZeUJeWFLNh@cluster0.mhffqbw.mongodb.net/social-media-api';
 mongoose_1.default.connect(mongodb, {

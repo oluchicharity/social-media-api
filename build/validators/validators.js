@@ -14,7 +14,8 @@ const registerValidationRules = () => {
 };
 exports.registerValidationRules = registerValidationRules;
 // Validation for login request
-exports.loginValidationRules = [
+const loginValidationRules = () => [
     (0, express_validator_1.body)("email").isEmail().withMessage("Invalid email format"),
     (0, express_validator_1.body)("password").notEmpty().withMessage("Password is required"),
 ];
+exports.loginValidationRules = loginValidationRules;

@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User, { IUser } from '../models/userModel';
+import Post from "../models/postModel"
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
@@ -80,7 +81,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     throw new Error('SECRET key is not provided');
      }
      // Generate JWT token 
-    const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '5h' });
 
       // Exclude password field from user object in response/ sanitize
       const userWithoutPassword = { ...user.toJSON(), password: undefined };
@@ -91,8 +92,119 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   };
-  
+
 
   
+export interface AuthenticatedRequest extends Request {
+    user?: IUser; 
+  }
+
+ 
+export const followUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?.id; 
+        const { followUserId } = req.body; 
+
+        // Check if the user to follow exists
+        const userToFollow = await User.findById(followUserId);
+        if (!userToFollow) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        // Update the logged-in user's following list
+        await User.findByIdAndUpdate(userId, { $addToSet: { following: followUserId } });
+
+        // Update the user being followed's followers list
+        await User.findByIdAndUpdate(followUserId, { $addToSet: { followers: userId } });
+
+        res.status(200).json({ message: 'User followed successfully' });
+    } catch (error) {
+        console.error('Error following user:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
+
+
+// Endpoint to unfollow a user
+export const unfollowUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+        // Ensure the user is authenticated
+        const userId = req.user?.id;
+        if (!userId) {
+             res.status(401).json({ error: 'Unauthorized' });
+             return
+        }
+
+        const { unfollowUserId } = req.body;
+
+        // Validate the unfollowUserId
+        if (!unfollowUserId) {
+         res.status(400).json({ error: 'Unfollow user ID is required' });
+         return
+        }
+
+        // Check if the user to unfollow exists
+        const userToUnfollow = await User.findById(unfollowUserId);
+        if (!userToUnfollow) {
+            res.status(404).json({ error: 'User to unfollow not found' });
+            return
+        }
+
+        // Check if the logged-in user is actually following the user to unfollow
+        if (!userToUnfollow.followers.includes(userId)) {
+             res.status(400).json({ error: 'You are not following this user' });
+             return
+        }
+
+        // Update the logged-in user's following list
+        const updatedUser = await User.findByIdAndUpdate(userId, { $pull: { following: unfollowUserId } });
+        if (!updatedUser) {
+             res.status(500).json({ error: 'Failed to update following list' });
+             return
+        }
+
+        // Update the user being unfollowed's followers list
+        const updatedUserToUnfollow = await User.findByIdAndUpdate(unfollowUserId, { $pull: { followers: userId } });
+        if (!updatedUserToUnfollow) {
+             res.status(500).json({ error: 'Failed to update followers list of user to unfollow' });
+             return
+        }
+
+        res.status(200).json({ message: 'User unfollowed successfully' });
+    } catch (error) {
+        console.error('Error unfollowing user:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
+
+
+export const getFeed = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const currentUser = req.user as IUser;
+    const followingUsers = currentUser.following;
+
+    const page = parseInt(req.query.page as string) || 1; 
+    const limit = parseInt(req.query.limit as string) || 10; 
+
+    // Calculate the skip value
+    const skip = (page - 1) * limit;
+
+    // Query posts with pagination
+    const feedPosts = await Post.find({ createdBy: { $in: followingUsers } })
+                                 .skip(skip)
+                                 .limit(limit)
+                                 .sort({ createdAt: -1 }); // Sort by createdAt in descending order
+
+    res.status(200).json({ message: 'Feed retrieved successfully', feedPosts });
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 

@@ -12,7 +12,7 @@ export const registerValidationRules = () => {
 };
 
 // Validation for login request
-export const loginValidationRules = [
+export const loginValidationRules =()=> [
   body("email").isEmail().withMessage("Invalid email format"),
   body("password").notEmpty().withMessage("Password is required"),
 ];

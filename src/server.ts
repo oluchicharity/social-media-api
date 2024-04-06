@@ -1,7 +1,8 @@
 import express, { Application, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { ConnectOptions } from 'mongoose';
-import router from './routes/userRoutes';
+import userRouter from './routes/userRoutes';
+import postRouter from "./routes/postRoutes"
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -16,7 +17,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use(express.json());
 
 // Define API routes
-app.use('/api', router);
+app.use('/api', userRouter,postRouter);
 
 // MongoDB connection
 const mongodb = 'mongodb+srv://agbakwuruoluchi29:SgsXUJZeUJeWFLNh@cluster0.mhffqbw.mongodb.net/social-media-api';
