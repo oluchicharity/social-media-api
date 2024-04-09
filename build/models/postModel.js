@@ -23,11 +23,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// postModel.ts
 const mongoose_1 = __importStar(require("mongoose"));
 const postSchema = new mongoose_1.Schema({
     text: { type: String, required: true },
     attachments: [{ type: String }],
-    createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true } // Array of attachment URLs
-});
+    createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    likes: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }],
+    comments: [{ user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }, text: String }]
+}, { timestamps: true });
 exports.default = mongoose_1.default.model('Post', postSchema);

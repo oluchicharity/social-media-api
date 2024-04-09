@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFeed = exports.unfollowUser = exports.followUser = exports.loginUser = exports.registerUser = void 0;
+exports.getFeed = exports.unfollowUser = exports.followUser = exports.getAllUsers = exports.getOne = exports.loginUser = exports.registerUser = void 0;
 const express_validator_1 = require("express-validator");
 const userModel_1 = __importDefault(require("../models/userModel"));
 const postModel_1 = __importDefault(require("../models/postModel"));
+const notificationController_1 = require("./notificationController");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -89,6 +90,36 @@ const loginUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.loginUser = loginUser;
+const getOne = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.id;
+        // Query the database for the user by ID
+        const user = yield userModel_1.default.findById(userId);
+        // Check if the user exists
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        // If user found, send it in the response
+        res.status(200).json({ user });
+    }
+    catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+exports.getOne = getOne;
+const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const allUsers = yield userModel_1.default.find();
+        return allUsers;
+    }
+    catch (error) {
+        console.error('Error retrieving all users:', error);
+        throw new Error('Failed to retrieve all users');
+    }
+});
+exports.getAllUsers = getAllUsers;
 const followUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
@@ -104,6 +135,8 @@ const followUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         yield userModel_1.default.findByIdAndUpdate(userId, { $addToSet: { following: followUserId } });
         // Update the user being followed's followers list
         yield userModel_1.default.findByIdAndUpdate(followUserId, { $addToSet: { followers: userId } });
+        // Create a notification for the user being followed
+        yield (0, notificationController_1.createNotification)(followUserId, 'follow', undefined, userId);
         res.status(200).json({ message: 'User followed successfully' });
     }
     catch (error) {
@@ -134,7 +167,7 @@ const unfollowUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             res.status(404).json({ error: 'User to unfollow not found' });
             return;
         }
-        // Check if the logged-in user is actually following the user to unfollow
+        // Check if the logged-in user is following the user to unfollow
         if (!userToUnfollow.followers.includes(userId)) {
             res.status(400).json({ error: 'You are not following this user' });
             return;
@@ -161,10 +194,17 @@ const unfollowUser = (req, res) => __awaiter(void 0, void 0, void 0, function* (
 exports.unfollowUser = unfollowUser;
 const getFeed = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const currentUser = req.user; // Assuming you have authentication middleware
-        const followingUsers = currentUser.following; // Assuming 'following' contains IDs of followed users
-        // Query posts created by users whom the current user follows
-        const feedPosts = yield postModel_1.default.find({ createdBy: { $in: followingUsers } });
+        const currentUser = req.user;
+        const followingUsers = currentUser.following;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        // Calculate the skip value
+        const skip = (page - 1) * limit;
+        // Query posts with pagination
+        const feedPosts = yield postModel_1.default.find({ createdBy: { $in: followingUsers } })
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 }); // Sort by createdAt in descending order
         res.status(200).json({ message: 'Feed retrieved successfully', feedPosts });
     }
     catch (error) {

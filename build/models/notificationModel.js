@@ -24,11 +24,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const UserSchema = new mongoose_1.Schema({
-    username: { type: String, required: true },
-    email: { type: String, required: true },
-    password: { type: String, required: true },
-    followers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }],
-    following: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'User' }]
+const NotificationSchema = new mongoose_1.Schema({
+    recipient: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, enum: ['mention', 'like', 'comment', 'follow'], required: true },
+    postId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Post' },
+    sender: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
+    read: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
 });
-exports.default = mongoose_1.default.model('User', UserSchema);
+exports.default = mongoose_1.default.model('Notification', NotificationSchema);

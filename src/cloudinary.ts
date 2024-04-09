@@ -65,19 +65,19 @@ cloudinary.v2.config({
     api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
-// Function to upload attachments to Cloudinary
+
 export const uploadAttachments = async (files: Express.Multer.File[]): Promise<string[]> => {
   const attachments: string[] = [];
 
   for (const file of files) {
     try {
-      // Upload each file to Cloudinary
+     
       const result: UploadApiResponse = await cloudinary.v2.uploader.upload(file.path);
       
       attachments.push(result.secure_url);
     } catch (error) {
       console.error('Error uploading file to Cloudinary:', error);
-      // Handle upload errors
+      
       throw new Error('Failed to upload file to Cloudinary');
     }
   }

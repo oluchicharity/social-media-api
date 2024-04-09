@@ -16,10 +16,10 @@ app.get('/', (req: Request, res: Response) => {
 
 app.use(express.json());
 
-// Define API routes
-app.use('/api', userRouter,postRouter);
 
-// MongoDB connection
+app.use('/api/v1', userRouter,postRouter);
+
+
 const mongodb = 'mongodb+srv://agbakwuruoluchi29:SgsXUJZeUJeWFLNh@cluster0.mhffqbw.mongodb.net/social-media-api';
 mongoose.connect(mongodb, {
   useNewUrlParser: true,

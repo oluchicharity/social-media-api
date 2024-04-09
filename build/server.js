@@ -15,9 +15,7 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Social Media API!');
 });
 app.use(express_1.default.json());
-// Define API routes
-app.use('/api', userRoutes_1.default, postRoutes_1.default);
-// MongoDB connection
+app.use('/api/v1', userRoutes_1.default, postRoutes_1.default);
 const mongodb = 'mongodb+srv://agbakwuruoluchi29:SgsXUJZeUJeWFLNh@cluster0.mhffqbw.mongodb.net/social-media-api';
 mongoose_1.default.connect(mongodb, {
     useNewUrlParser: true,

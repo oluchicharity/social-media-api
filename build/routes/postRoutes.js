@@ -8,4 +8,7 @@ const postControlller_1 = require("../controller/postControlller");
 const middleware_1 = require("../middleware/middleware");
 const router = express_1.default.Router();
 router.post('/posts', middleware_1.authenticateUser, postControlller_1.createPost);
+router.post('/:id/like', middleware_1.authenticateUser, postControlller_1.likePost);
+router.post('/:id/comment', middleware_1.authenticateUser, postControlller_1.commentOnPost);
+router.get('/:id', middleware_1.authenticateUser, postControlller_1.getPostDetails);
 exports.default = router;

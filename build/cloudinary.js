@@ -26,18 +26,15 @@ cloudinary_1.default.v2.config({
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
-// Function to upload attachments to Cloudinary
 const uploadAttachments = (files) => __awaiter(void 0, void 0, void 0, function* () {
     const attachments = [];
     for (const file of files) {
         try {
-            // Upload each file to Cloudinary
             const result = yield cloudinary_1.default.v2.uploader.upload(file.path);
             attachments.push(result.secure_url);
         }
         catch (error) {
             console.error('Error uploading file to Cloudinary:', error);
-            // Handle upload errors
             throw new Error('Failed to upload file to Cloudinary');
         }
     }

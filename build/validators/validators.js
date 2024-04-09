@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginValidationRules = exports.registerValidationRules = void 0;
-// src/validators/registerValidator.ts
 const express_validator_1 = require("express-validator");
 const registerValidationRules = () => {
     return [

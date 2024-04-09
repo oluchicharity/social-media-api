@@ -3,10 +3,13 @@ import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import User, { IUser } from '../models/userModel';
 import Post from "../models/postModel"
+import { createNotification } from './notificationController';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { promises } from 'dns';
 dotenv.config()
+
 
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -93,37 +96,72 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     }
   };
 
+export const getOne = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = req.params.id;
 
+        // Query the database for the user by ID
+        const user: IUser | null = await User.findById(userId);
+
+        // Check if the user exists
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return; 
+        }
+
+        // If user found, send it in the response
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
+  export const getAllUsers = async (): Promise<IUser[]> => {
+      try {
+          const allUsers: IUser[] = await User.find();
+          return allUsers;
+      } catch (error) {
+          console.error('Error retrieving all users:', error);
+          throw new Error('Failed to retrieve all users');
+      }
+  };
+  
   
 export interface AuthenticatedRequest extends Request {
     user?: IUser; 
   }
 
  
-export const followUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-        const userId = req.user?.id; 
-        const { followUserId } = req.body; 
-
-        // Check if the user to follow exists
-        const userToFollow = await User.findById(followUserId);
-        if (!userToFollow) {
-            res.status(404).json({ error: 'User not found' });
-            return;
-        }
-
-        // Update the logged-in user's following list
-        await User.findByIdAndUpdate(userId, { $addToSet: { following: followUserId } });
-
-        // Update the user being followed's followers list
-        await User.findByIdAndUpdate(followUserId, { $addToSet: { followers: userId } });
-
-        res.status(200).json({ message: 'User followed successfully' });
-    } catch (error) {
-        console.error('Error following user:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-};
+  export const followUser = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+          const userId = req.user?.id; 
+          const { followUserId } = req.body; 
+  
+          // Check if the user to follow exists
+          const userToFollow = await User.findById(followUserId);
+          if (!userToFollow) {
+              res.status(404).json({ error: 'User not found' });
+              return;
+          }
+  
+          // Update the logged-in user's following list
+          await User.findByIdAndUpdate(userId, { $addToSet: { following: followUserId } });
+  
+          // Update the user being followed's followers list
+          await User.findByIdAndUpdate(followUserId, { $addToSet: { followers: userId } });
+  
+          // Create a notification for the user being followed
+          await createNotification(followUserId, 'follow', undefined, userId);
+  
+          res.status(200).json({ message: 'User followed successfully' });
+      } catch (error) {
+          console.error('Error following user:', error);
+          res.status(500).json({ error: 'Internal Server Error' });
+      }
+  };
+  
 
 
 
@@ -153,7 +191,7 @@ export const unfollowUser = async (req: AuthenticatedRequest, res: Response): Pr
             return
         }
 
-        // Check if the logged-in user is actually following the user to unfollow
+        // Check if the logged-in user is following the user to unfollow
         if (!userToUnfollow.followers.includes(userId)) {
              res.status(400).json({ error: 'You are not following this user' });
              return
