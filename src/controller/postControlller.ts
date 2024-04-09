@@ -9,13 +9,13 @@ import cloudinary, { v2 as cloudinaryV2 } from 'cloudinary';
 import { getAllUsers } from './userController'; 
 
 
-export const createPost = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+export const createPost = async (req: AuthenticatedRequest, res: Response): Promise<unknown> => {
   try {
     // Check if user is authenticated
     const user = req.user;
     if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+      
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { text } = req.body;
@@ -32,6 +32,7 @@ export const createPost = async (req: AuthenticatedRequest, res: Response): Prom
 
     // Get all users
     const allUsers = await getAllUsers();
+    //rabbit.  bullque, event achitecture
 
     // Check if the post contains mentions and notify the mentioned users
     const mentionedUsers = extractMentionedUsers(text, allUsers);
