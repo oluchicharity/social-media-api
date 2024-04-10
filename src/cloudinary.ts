@@ -49,9 +49,6 @@
 // };
 
 
-
-
-import express, { Request, Response } from 'express';
 import multer from 'multer';
 import cloudinary, { UploadApiResponse } from 'cloudinary';
 import dotenv from 'dotenv';
@@ -65,15 +62,21 @@ cloudinary.v2.config({
     api_secret: process.env.CLOUDINARY_API_SECRET 
 });
 
+// Set up Multer for handling file uploads
+const upload = multer({ dest: 'uploads/' });
 
 export const uploadAttachments = async (files: Express.Multer.File[]): Promise<string[]> => {
   const attachments: string[] = [];
 
   for (const file of files) {
     try {
-     
+      // Check if file size exceeds limit (in bytes)
+      const fileSizeLimit = 5 * 1024 * 1024; // 5mb
+      if (file.size > fileSizeLimit) {
+        throw new Error('File size exceeds the maximum limit');
+      }
+
       const result: UploadApiResponse = await cloudinary.v2.uploader.upload(file.path);
-      
       attachments.push(result.secure_url);
     } catch (error) {
       console.error('Error uploading file to Cloudinary:', error);
